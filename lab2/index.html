@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ข้อมูลจาก Firebase (ผ่าน n8n API)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f9fafb;
+            color: #333;
+            margin: 0;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f1f5f9;
+            color: #374151;
+        }
+        tr:hover td {
+            background: #f9fafb;
+            transition: background 0.3s ease;
+        }
+        #loading, #error {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+        }
+        #loading {
+            color: #6b7280;
+        }
+        #error {
+            color: #ef4444;
+            display: none;
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #06b6d4;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(6,182,212,0.4);
+            transition: all 0.3s;
+        }
+        .refresh-btn:hover {
+            background: #0891b2;
+            transform: scale(1.1);
+        }
+        .status-indicator {
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(16,185,129,0.2);
+        }
+        .status-indicator.loading {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+        .status-indicator.error {
+            background: #ef4444;
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; }
+            50% { opacity:0.5; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            table th, table td { padding: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-indicator" id="statusIndicator"></div>
+
+    <h1>ข้อมูลที่ส่งมาจากฟอร์ม (Firebase)</h1>
+
+    <div id="loading">🚀 กำลังโหลดข้อมูล...</div>
+    <div id="error">❌ เกิดข้อผิดพลาดในการดึงข้อมูล</div>
+
+    <table id="dataTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>ชื่อ-นามสกุล</th>
+                <th>ID</th>
+                <th>สร้างเมื่อ</th>
+                <th>อัปเดตล่าสุด</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <button class="refresh-btn" id="refreshBtn" title="รีโหลด">⟳</button>
+
+    <script>
+        const API_URL = 'http://localhost:5678/webhook-test/user';
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const dataTable = document.getElementById('dataTable');
+        const tbody = dataTable.querySelector('tbody');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        function updateStatus(status) {
+            statusIndicator.className = `status-indicator ${status}`;
+        }
+
+        async function fetchData() {
+            loading.style.display = 'block';
+            errorDiv.style.display = 'none';
+            dataTable.style.display = 'none';
+            tbody.innerHTML = '';
+            updateStatus('loading');
+
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error(`HTTP error! ${res.status}`);
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const row = tbody.insertRow();
+                        row.insertCell().textContent = item.name || '-';
+                        row.insertCell().textContent = item._id || '-';
+                        row.insertCell().textContent = item._createTime ? new Date(item._createTime).toLocaleString('th-TH') : '-';
+                        row.insertCell().textContent = item._updateTime ? new Date(item._updateTime).toLocaleString('th-TH') : '-';
+                    });
+                    dataTable.style.display = 'table';
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">ไม่พบข้อมูล</td></tr>';
+                    dataTable.style.display = 'table';
+                }
+                updateStatus('');
+            } catch (err) {
+                console.error("Error:", err);
+                errorDiv.style.display = 'block';
+                updateStatus('error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchData);
+        refreshBtn.addEventListener('click', fetchData);
+    </script>
+
+</body>
+</html>

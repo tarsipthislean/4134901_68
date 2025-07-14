@@ -1,0 +1,434 @@
+{
+  "name": "LAB4",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "33762dac-7788-40dd-a64d-1f09a0a1b7da",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 291763022,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk/edit#gid=291763022"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        180,
+        0
+      ],
+      "id": "577ffab2-3088-4d0e-a089-624c2ddf2d57",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "skVrdbYmCIviZlwn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\":\n  \"Mozilla/5.0\"\n}\n  ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        360,
+        0
+      ],
+      "id": "8a88d45b-1aab-4c14-8b01-0b0b903ceb69",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data;\n\n\nconst match = html.match(/var ytInitialData = (.*?);\\s*<\\/script>/s);\nif (!match) {\n  return [{ json: { error: \"ytInitialData not found\" } }];\n}\n\nlet data;\ntry {\n  data = JSON.parse(match[1]);\n} catch (err) {\n  return [{ json: { error: \"Invalid JSON\", details: err.message } }];\n}\n\nlet title = null;\nlet description = null;\n\n\ntry {\n  const contents = data.contents.twoColumnWatchNextResults.results.results.contents;\n  const videoPrimaryInfo = contents.find(c => c.videoPrimaryInfoRenderer);\n  title = videoPrimaryInfo.videoPrimaryInfoRenderer.title.runs[0].text;\n} catch (e) {\n  title = null;\n}\n\n\nfunction findAttributedDescription(obj) {\n  if (typeof obj !== 'object' || obj === null) return null;\n\n  if (obj.attributedDescription && obj.attributedDescription.content) {\n    return obj.attributedDescription.content;\n  }\n\n  for (const key in obj) {\n    const result = findAttributedDescription(obj[key]);\n    if (result) return result;\n  }\n\n  return null;\n}\n\ndescription = findAttributedDescription(data);\n\nreturn [{\n  json: {\n    title,\n    description\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        0
+      ],
+      "id": "6aa648be-866e-42b6-9ad0-1e3508f3ac01",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        580,
+        280
+      ],
+      "id": "ce177cba-c964-4c5e-9346-4422317b88cf",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "qqU39HPFnmzzJIqL",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=คุณคือผู้เชี่ยวชาญด้าน YouTube SEO\nเป้าหมายของคุณคือเปลี่ยนคำอธิบายคลิปวิดีโอจาก {{ $json.description }} ให้กลายเป็นชื่อที่น่าสนใจ ดึงดูดผู้ชม และเพิ่มอัตราการคลิก (CTR)\nแนวทาง:\nใช้ภาษาที่กระตุ้นความสนใจ เช่น คำที่สื่ออารมณ์เร่งด่วน หรือเน้นประโยชน์\nหลีกเลี่ยงการใช้คำซ้ำ หรือคำทั่วไปที่ไม่น่าสนใจ\nข้อความใหม่ต้องเหมาะสมกับกลุ่มเป้าหมายและบริบทของวิดีโอ\nผลลัพธ์ที่ต้องการ\n{\n\"des_old\"\n\"des_new\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        820,
+        80
+      ],
+      "id": "6d0922d0-44db-4ba3-a4ee-50749046843b",
+      "name": "Basic LLM des"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=คุณคือผู้เชี่ยวชาญด้าน YouTube SEO\nเป้าหมายของคุณคือเปลี่ยนชื่อคลิปวิดีโอจาก {{ $json.title }} ให้กลายเป็นชื่อที่น่าสนใจ ดึงดูดผู้ชม และเพิ่มอัตราการคลิก (CTR)\nแนวทาง:\nใช้ภาษาที่กระตุ้นความสนใจ เช่น คำที่สื่ออารมณ์เร่งด่วน หรือเน้นประโยชน์\nหลีกเลี่ยงการใช้คำซ้ำ หรือคำทั่วไปที่ไม่น่าสนใจ\nชื่อใหม่ต้องเหมาะสมกับกลุ่มเป้าหมายและบริบทของวิดีโอ\nผลลัพธ์ที่ต้องการ:\nส่งคืนข้อมูลในรูปแบบ JSON โดยไม่มี text ห่อหุ้ม\n{\n\"title_old\":\n\"title_new\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        820,
+        -120
+      ],
+      "id": "13cbfbf7-ee6b-4446-943a-45625b6b9e73",
+      "name": "title"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = items[0].json.text;\n\n\nconst parsed = JSON.parse(rawText);\n\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        -120
+      ],
+      "id": "954928e3-f610-458f-9722-edb70a8e7da3",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = items[0].json.text;\n\n\nconst parsed = JSON.parse(rawText);\n\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        80
+      ],
+      "id": "d1a78ed5-0216-4e54-b914-56a3f5a48df1",
+      "name": "Code2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1420,
+        0
+      ],
+      "id": "5b44afd5-78cb-4dab-9ec4-44dd14c07eba",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "allFieldsExcept",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "817896e0-134e-49ae-a6a1-a62eeb1fb6cc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 291763022,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Jdmw7e13sJXZppn3uNsGiTFa8QRUJXl535_RtBbuVk/edit#gid=291763022"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url": "={{ $('Google Sheets').item.json.url }}",
+            "title_old": "={{ $json.data[0].title_old }}",
+            "des_old": "={{ $json.data[1].des_old }}",
+            "title_new": "={{ $json.data[0].title_new }}",
+            "des_new": "={{ $json.data[1].des_new }}"
+          },
+          "matchingColumns": [
+            "url"
+          ],
+          "schema": [
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title_old",
+              "displayName": "title_old",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "des_old",
+              "displayName": "des_old",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title_new",
+              "displayName": "title_new",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "des_new",
+              "displayName": "des_new",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1820,
+        0
+      ],
+      "id": "ba9e08fe-38b5-4eaf-8f6c-327ab2fef417",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "skVrdbYmCIviZlwn",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "title",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM des",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "title",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM des",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "title": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM des": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9f29ed7c-6c04-49ff-a0e9-b0a99a9bb003",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2f8835c7026314b0bddc92024c930238aa3cfd1e077cc99971e49bba27cd25e3"
+  },
+  "id": "6iNKOt7RZgOZF9Pj",
+  "tags": []
+}

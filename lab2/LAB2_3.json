@@ -1,0 +1,62 @@
+{
+  "name": "LAB2-3",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "ฟอร์ม",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "name",
+              "placeholder": "ชื่อ"
+            },
+            {
+              "fieldLabel": "age",
+              "fieldType": "number",
+              "placeholder": "อายุ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "04b2e8c7-cf8c-4697-abeb-7c95ccdfcbda",
+      "name": "On form submission",
+      "webhookId": "e9237872-4c7f-4ce5-b07a-d146b6110ce2"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/webhook-test/user",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"name\":\"{{$json.name}}\",\n  \"age\":\"{{$json}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "5fc4fcb6-7e06-4332-b997-0ebc8b80dc05",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3919a84e-1bde-49c6-9115-1a23af177ad2",
+  "meta": {
+    "instanceId": "2f8835c7026314b0bddc92024c930238aa3cfd1e077cc99971e49bba27cd25e3"
+  },
+  "id": "oHH7xZVXfQ2pzRq8",
+  "tags": []
+}
