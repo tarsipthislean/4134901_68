@@ -1,0 +1,343 @@
+{
+  "name": "LAB4_1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -220,
+        380
+      ],
+      "id": "b6b96881-a40e-4b98-8346-b13fd1c98056",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "web",
+          "mode": "list",
+          "cachedResultName": "web"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        380
+      ],
+      "id": "f4842e3f-dabd-4e4c-acb6-fb6be1b91882",
+      "name": "MySQL",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        220,
+        380
+      ],
+      "id": "fc658aa7-fd1a-4857-a425-cb0f580f7bb8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "id": "3a95d7ab-eb22-4433-9d62-452996ab932e",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "web",
+          "mode": "list",
+          "cachedResultName": "web"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        660,
+        300
+      ],
+      "id": "20656e46-ff5a-4638-856b-b671db6411c9",
+      "name": "MySQL2",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\",\n  \"Authorization\": \"Bearer rd6ekmePAC6piDAoQ8g53LHHFshyiQJNdmF0VlE+O11os5TLZsJ1zdbU+A4JCD6tt7JijLJkTi2qbln0sEJrj9cTAVpLzp+T+VlQqtc6cQMCAWO8bdltkEt4JSEwMyhHRZk+sVHEd7odiL0VdUGM8gdB04t89/1O/w1cDnyilFU=\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"Ud22f24f33376aafe04e90f703322a53b\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"🌐 เว็บไซต์ {{ $json.url }} ||status: {{ $json.status }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "id": "5fc3a02f-7d3e-4960-a94c-90341209095f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": {
+          "__rl": true,
+          "value": "web",
+          "mode": "list",
+          "cachedResultName": "web"
+        },
+        "dataMode": "defineBelow",
+        "columnToMatchOn": "url",
+        "valueToMatchOn": "={{ $json.url }}",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "last_check",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "column": "status",
+              "value": "={{ $json.statusCode }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        880,
+        460
+      ],
+      "id": "5a030cbc-05ed-421d-90c1-cc2620368cc6",
+      "name": "MySQL1",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        460
+      ],
+      "id": "fd7f7c43-3122-440d-a73b-bc28deeb4540",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b21f69af-7759-4857-b515-3614b6e808ae",
+              "name": "timestamp",
+              "value": "= {{ DateTime.fromISO($('Schedule Trigger').item.json.timestamp).setZone(\"Asia/Bangkok\").toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+              "type": "string"
+            },
+            {
+              "id": "d40c505c-efd7-41ab-9f1e-b0541a2e794b",
+              "name": "url",
+              "value": "={{ $('MySQL').item.json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "9a95f985-7e5a-465a-bef5-bbbd6d6579f4",
+              "name": "statusCode",
+              "value": "={{ $json.statusCode }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        460
+      ],
+      "id": "a125a48c-4915-4f13-ac28-64aac915bfbb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        220
+      ],
+      "id": "ed0f057f-03ed-4219-9024-77e975a6befd",
+      "name": "Webhook",
+      "webhookId": "2cbfdd36-c9d2-4358-88e7-6efab632004e"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "MySQL2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "MySQL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c29e2b86-a160-458f-bdb5-068e570c8038",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3ffe81eeecacc0ac8568bdf22d751da788df336c117cf55bde0e9089433631e5"
+  },
+  "id": "CPfdYgLNuwYGJCvp",
+  "tags": []
+}

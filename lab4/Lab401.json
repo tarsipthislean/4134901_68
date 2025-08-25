@@ -1,0 +1,442 @@
+{
+  "name": "LAB4",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c563ce75-fd4d-4333-b74e-407e3175f203",
+      "name": "Webhook",
+      "webhookId": "2ae73cbd-3125-44b2-ad53-8c25763cc344"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "file",
+        "name": "={{ $now.toMillis() }}.{{ $('Webhook').item.binary.file.fileExtension }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1xzZ4u5undwASJ4-596aAHFuDV0PAsBOS",
+          "mode": "list",
+          "cachedResultName": "LAB-4",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1xzZ4u5undwASJ4-596aAHFuDV0PAsBOS"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        220,
+        0
+      ],
+      "id": "669d5ce9-8b7f-43f3-ab20-7f01ec71d048",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1PuiXFyfVyIP4Dru",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "  SELECT url,file_name FROM member WHERE email = '{{ $('Webhook').item.json.body.email }}'",
+        "options": {
+          "detailedOutput": true
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        420,
+        0
+      ],
+      "id": "9b56e647-aabc-468f-ae03-b2425ca2a3c7",
+      "name": "MySQL",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ede949c7-f248-419a-a08f-4ed4055e10d8",
+              "leftValue": "={{ $json.data[0].file&name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "70beb031-6b0e-4689-9489-fab6902811d0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "member",
+          "mode": "list",
+          "cachedResultName": "member"
+        },
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "name",
+              "value": "={{ $('Webhook').item.json.body.name }}"
+            },
+            {
+              "column": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "column": "url",
+              "value": "={{ $('Google Drive').item.json.webViewLink }}"
+            },
+            {
+              "column": "file_name",
+              "value": "={{ $('Google Drive').item.json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        860,
+        -120
+      ],
+      "id": "60fc664f-0cc0-497c-ad08-d4b6c7d2fa94",
+      "name": "MySQL1",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"err\":  \"{{ $json.email }} already exist\" \n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        100
+      ],
+      "id": "a764e477-9f62-44aa-bf67-48a851cc7133",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive').item.json.webViewLink }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1080,
+        -20
+      ],
+      "id": "3162e75f-5a77-4d90-a050-88cc6af453f2",
+      "name": "Google Drive1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1PuiXFyfVyIP4Dru",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1300,
+        -140
+      ],
+      "id": "339adb2a-e1be-42ad-91a1-870149742b8d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        -280
+      ],
+      "id": "0f1514a9-7b03-45da-9098-b3fc4b985fed",
+      "name": "When chat message received",
+      "webhookId": "680f7ee0-ff96-4ddb-82b7-ac34b9ea0c61"
+    },
+    {
+      "parameters": {
+        "jsCode": "var result;\n\nif ($input.first().json.chatInput) {\n  result = \"ขอคำสั่ง SQL ค้นหา\" +  $input.first().json.chatInput +\"ในฟิสด์ eamil,name,avatar,file_name ของตาราง member \" ;\n} else {\n  result = \"ภาพนี้\"+ $input.first().json.data[0].avatar +\"คือภาพอะไร\";\n}\n\nreturn [\n  {\n    json: {\n      promt: result \n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -140
+      ],
+      "id": "f273cf44-e0ff-4cc9-9552-a91bc19daa5f",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        -140
+      ],
+      "id": "86a9e60f-bec0-454b-9e07-f725932b7966",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        40
+      ],
+      "id": "214f48c2-7985-4f25-9528-f5f6f463b9c8",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "VkqgKRV78bJ2hGOA",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.4,
+      "position": [
+        1900,
+        80
+      ],
+      "id": "bb53c7de-d931-40b2-b0a8-0e489538d2cb",
+      "name": "MySQL2",
+      "credentials": {
+        "mySql": {
+          "id": "EY8SxwgUt9j10kgk",
+          "name": "MySQL account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "MySQL1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL1": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0d037aaf-3f1c-4c0f-905d-b6813f2b7ad7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3ffe81eeecacc0ac8568bdf22d751da788df336c117cf55bde0e9089433631e5"
+  },
+  "id": "SMN8QsQVTqkJGor7",
+  "tags": []
+}
