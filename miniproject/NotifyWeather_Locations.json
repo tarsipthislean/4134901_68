@@ -1,0 +1,167 @@
+{
+  "name": "NotifyWeather_Locations",
+  "nodes": [
+    {
+      "parameters": {
+        "locationSelection": "coordinates",
+        "latitude": "={{ $json['message']['location']['latitude'] }}",
+        "longitude": "={{ $json['message']['location']['longitude'] }}"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        208,
+        32
+      ],
+      "id": "d5d1f939-ed03-46a8-a424-a4f8f3f0be1e",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "HWBQRgPdbEjiUCuP",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef7124a0-cb3e-4258-8295-fef22e9212b2",
+              "name": "รายงานสภาพอากาศประจำวัน:",
+              "value": "={{ $json.name }}, {{ $json.sys.country }}",
+              "type": "string"
+            },
+            {
+              "id": "618aaf69-cfb7-4793-b7a8-feb1cfad8466",
+              "name": "สภาพอากาศ:",
+              "value": "={{ $json.weather[0].description }}",
+              "type": "string"
+            },
+            {
+              "id": "f8fe9d5c-90b3-4714-99b9-28775563b119",
+              "name": "อุณหภูมิ:",
+              "value": "={{ $json.main.temp }}°C",
+              "type": "string"
+            },
+            {
+              "id": "1b931b85-8b6d-4aec-9e58-2ea2618c7f52",
+              "name": "ความชื้น:",
+              "value": "={{ $json.main.humidity }}",
+              "type": "string"
+            },
+            {
+              "id": "6adba667-bbd0-4f48-930c-ae5d6282441e",
+              "name": "ความเร็วลม:",
+              "value": "={{ $json.wind.speed }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        32
+      ],
+      "id": "e82a75a7-e724-4941-bdd9-97fe753d3676",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "chatId": "=-1002922760848",
+        "text": "=🌤️ *รายงานสภาพอากาศประจำวัน* 🌤️\n\n📍 *พื้นที่:* {{ $json['รายงานสภาพอากาศประจำวัน:'] }}\n\n☁️ *สภาพอากาศ:* {{ $json['สภาพอากาศ:'] }}\n\n🌡️ *อุณหภูมิ:* {{ $json['อุณหภูมิ:'] }} \n💧 *ความชื้น:* {{ $json['ความชื้น:'] }} %  \n💨 *ความเร็วลม:* {{ $json['ความเร็วลม:'] }} km/h  \n\n👗 *คำแนะนำการแต่งตัวตามสภาพอากาศ:*\n\n{{ \n  // ตรวจสอบสภาพอากาศและแนะนำการแต่งตัว\n  $json['สภาพอากาศ:'] === 'Clear' || $json['สภาพอากาศ:'] === 'Clouds' || $json['สภาพอากาศ:'] === 'overcast clouds' || $json['สภาพอากาศ:'] === 'broken clouds'\n    ? ($json['อุณหภูมิ:'] <= 25 ? 'หนาว: แนะนำให้ท่านสวมเสื้อกันหนาวหนาและผ้าพันคอ' : 'อากาศดี: แนะนำให้ท่านใส่เสื้อเชิ้ตแขนยาวหรือเสื้อแจ็คเก็ตบาง')\n    : $json['สภาพอากาศ:'] === 'Rain' || $json['สภาพอากาศ:'] === 'moderate rain' || $json['สภาพอากาศ:'] === 'light rain'\n      ? 'ตกฝน: แนะนำให้ท่านสวมเสื้อกันฝนหรือพกร่มเพื่อหลีกเลี่ยงฝน'\n      : $json['สภาพอากาศ:'] === 'Snow' || $json['สภาพอากาศ:'] === 'few clouds' || $json['สภาพอากาศ:'] === 'light snow'\n        ? 'หิมะตก: แนะนำให้ท่านสวมเสื้อกันหนาวหนาและใส่ถุงมือกับหมวกเพื่อความอบอุ่น'\n        : 'อากาศดี: แนะนำให้ท่านใส่เสื้อเชิ้ตแขนยาวหรือเสื้อแจ็คเก็ตบาง'\n}}\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        32
+      ],
+      "id": "d608a020-3cd6-43de-8403-9e5750ff6815",
+      "name": "Send a text message1",
+      "webhookId": "daebf47b-10da-4e80-a63c-09e55e96755b",
+      "credentials": {
+        "telegramApi": {
+          "id": "Om15ng76iW070TqO",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        32
+      ],
+      "id": "126fa515-5231-4477-8979-1cf5b34c9b39",
+      "name": "Telegram Trigger",
+      "webhookId": "c790cb9b-f006-4ac6-b586-8e0635360eda",
+      "credentials": {
+        "telegramApi": {
+          "id": "AxcQpDRIb5hdyrst",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenWeatherMap": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenWeatherMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3a212a32-8540-4a7c-889f-0761a2f6179c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25772876d565d8c0486f8019b68e4c59ce497380041c9da9836583c7029ca726"
+  },
+  "id": "nYNgY7PR1xfeH4Oz",
+  "tags": []
+}
